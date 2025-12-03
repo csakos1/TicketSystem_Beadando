@@ -1,0 +1,34 @@
+﻿{
+  "users": [
+    {
+      "id": "C001",
+      "name": "Kiss Péter",
+      "email": "peter.kiss@example.com",
+      "role": "Customer"
+    },
+    {
+      "id": "A101",
+      "name": "Horváth Gábor",
+      "email": "gabor.horvath@company.com",
+      "role": "Agent"
+    }
+  ],
+  "tickets": [
+    {
+      "ticketId": "T001",
+      "customerId": "C001",
+      "title": "Nem működik a belépés",
+      "description": "Hibaüzenetet kapok jelszó beírásakor.",
+      "category": "Technical",
+      "status": "New",
+      "createdAt": "2023-10-27T10:00:00",
+      "messages": [
+        {
+          "sender": "Kiss Péter",
+          "text": "Segítséget kérek!",
+          "timestamp": "2023-10-27T10:01:00"
+        }
+      ]
+    }
+  ]
+}

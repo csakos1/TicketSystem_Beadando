@@ -3,10 +3,51 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TicketSystem.DAL;
+using TicketSystem.Models;
 
 namespace TicketSystem.BLL
 {
-    internal class StatisticsService
+    public class StatisticsService
     {
+        private readonly ITicketRepository _ticketRepo;
+
+        public StatisticsService(ITicketRepository ticketRepo)
+        {
+            _ticketRepo = ticketRepo;
+        }
+
+        public string GenerateReport()
+        {
+            var tickets = _ticketRepo.GetAll();
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("=== RENDSZER STATISZTIKA ===");
+            sb.AppendLine($"Összes jegy száma: {tickets.Count}");
+            sb.AppendLine("---------------------------");
+
+            // 1. Státusz szerinti eloszlás
+            sb.AppendLine("Eloszlás státusz szerint:");
+            var statusGroups = tickets.GroupBy(t => t.Status);
+            foreach (var group in statusGroups)
+            {
+                sb.AppendLine($" - {group.Key}: {group.Count()} db");
+            }
+
+            // 2. Kategória szerinti eloszlás
+            sb.AppendLine("\nEloszlás kategória szerint:");
+            var catGroups = tickets.GroupBy(t => t.Category);
+            foreach (var group in catGroups)
+            {
+                sb.AppendLine($" - {group.Key}: {group.Count()} db");
+            }
+
+            // 3. Megoldott jegyek aránya
+            int closedCount = tickets.Count(t => t.Status == TicketStatus.Closed || t.Status == TicketStatus.Resolved);
+            double ratio = tickets.Count > 0 ? (double)closedCount / tickets.Count * 100 : 0;
+            sb.AppendLine($"\nMegoldott/Lezárt arány: {ratio:F1}%");
+
+            return sb.ToString();
+        }
     }
 }
