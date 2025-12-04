@@ -36,7 +36,7 @@ namespace TicketSystem.Tests
         {
             // Arrange
             var service = CreateService();
-            int ticketCount = 100_000; // 100 ezer jegy!
+            int ticketCount = 1_000_000;
             var stopwatch = Stopwatch.StartNew();
 
             // Act 1: Tömeges létrehozás
@@ -49,8 +49,8 @@ namespace TicketSystem.Tests
             long createTime = stopwatch.ElapsedMilliseconds;
             _output.WriteLine($"{ticketCount} jegy létrehozása: {createTime} ms");
 
-            // Assert 1: Ésszerű időn belül futott le? (pl. < 5 másodperc)
-            Assert.True(createTime < 5000, "A létrehozás túl lassú volt!");
+            // Assert 1: Ésszerű időn belül futott le? (pl. < 1 másodperc)
+            Assert.True(createTime < 1000, "A létrehozás túl lassú volt!");
 
             // Act 2: Keresés a nagy tömegben (utolsó elem megkeresése - legrosszabb eset)
             stopwatch.Restart();
