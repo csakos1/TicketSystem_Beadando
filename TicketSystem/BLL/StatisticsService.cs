@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using TicketSystem.DAL;
 using TicketSystem.Models;
 
@@ -26,28 +24,17 @@ namespace TicketSystem.BLL
             sb.AppendLine($"Összes jegy száma: {tickets.Count}");
             sb.AppendLine("---------------------------");
 
-            // 1. Státusz szerinti eloszlás
             sb.AppendLine("Eloszlás státusz szerint:");
             var statusGroups = tickets.GroupBy(t => t.Status);
             foreach (var group in statusGroups)
-            {
                 sb.AppendLine($" - {group.Key}: {group.Count()} db");
-            }
 
-            // 2. Kategória szerinti eloszlás
             sb.AppendLine("\nEloszlás kategória szerint:");
             var catGroups = tickets.GroupBy(t => t.Category);
             foreach (var group in catGroups)
-            {
                 sb.AppendLine($" - {group.Key}: {group.Count()} db");
-            }
 
-            // 3. Megoldott jegyek aránya
-            int closedCount = tickets.Count(t => t.Status == TicketStatus.Closed || t.Status == TicketStatus.Resolved);
-            double ratio = tickets.Count > 0 ? (double)closedCount / tickets.Count * 100 : 0;
-            sb.AppendLine($"\nMegoldott/Lezárt arány: {ratio:F1}%");
-
-            // 4. Átlagos megoldási idő (Created -> Resolved/Closed)
+            // MEGOLDÁSI IDŐ SZÁMÍTÁSA
             var resolvedOrClosed = tickets
                 .Where(t => (t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed) && t.ResolvedAt != null)
                 .ToList();
@@ -60,7 +47,7 @@ namespace TicketSystem.BLL
             }
             else
             {
-                sb.AppendLine("\nÁtlagos megoldási idő: Nincs elég adat");
+                sb.AppendLine("\nÁtlagos megoldási idő: Nincs elég adat (vagy nincs megoldott jegy)");
             }
 
             return sb.ToString();

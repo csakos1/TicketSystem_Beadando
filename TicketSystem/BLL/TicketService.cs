@@ -26,14 +26,12 @@ namespace TicketSystem.BLL
             string newId = "T" + _ticketRepo.GetNextId().ToString("D3");
             var ticket = new Ticket(newId, userId, title, description, category);
 
-            // Naplózzuk a létrehozást
             ticket.History.Add(new StatusChangeLog(user.Name, "-", "New"));
 
             _ticketRepo.Add(ticket);
             return ticket;
         }
 
-        // JAVÍTÁS: A szűrő paraméterek legyenek nullable típusok (string?)
         public List<Ticket> GetTickets(
             string? assignedToFilter = null,
             TicketStatus? statusFilter = null,
@@ -41,6 +39,7 @@ namespace TicketSystem.BLL
             string? customerIdFilter = null,
             bool sortByDateDesc = false)
         {
+            // AUTOMATA LEZÁRÁS ELLENŐRZÉSE LISTÁZÁSKOR
             CheckAndAutoCloseTickets();
 
             var tickets = _ticketRepo.GetAll().AsQueryable();
@@ -146,6 +145,7 @@ namespace TicketSystem.BLL
 
             ticket.Status = newStatus;
 
+            // Ha Megoldott, beállítjuk az időt az AutoClose-hoz
             if (newStatus == TicketStatus.Resolved)
             {
                 ticket.ResolvedAt = DateTime.Now;
@@ -156,14 +156,16 @@ namespace TicketSystem.BLL
             }
         }
 
+        // --- AUTOMATA LEZÁRÁS LOGIKA ---
         private void CheckAndAutoCloseTickets()
         {
+            // Lekérjük azokat, amik Megoldottak, és van dátumuk
             var resolvedTickets = _ticketRepo.GetAll()
                 .Where(t => t.Status == TicketStatus.Resolved && t.ResolvedAt != null).ToList();
 
             foreach (var t in resolvedTickets)
             {
-                // Biztonságos null ellenőrzés (.Value)
+                // TESZT CÉLJÁBÓL: 1 perc után lezárjuk (Valóságban ez napok lennének)
                 if (t.ResolvedAt.HasValue && (DateTime.Now - t.ResolvedAt.Value).TotalMinutes >= 1)
                 {
                     t.History.Add(new StatusChangeLog("RENDSZER", "Resolved", "Closed"));
