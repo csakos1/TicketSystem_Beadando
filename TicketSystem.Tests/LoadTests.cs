@@ -61,7 +61,7 @@ namespace TicketSystem.Tests
             _output.WriteLine($"Keresés a {ticketCount} elem között: {searchTime} ms");
 
             // Assert 2: A keresés is legyen gyors (pl. < 500ms)
-            Assert.True(searchTime < 500, "A keresés túl lassú volt!");
+            Assert.True(searchTime < 100, "A keresés túl lassú volt!");
         }
 
         // --- 2. PÁRHUZAMOS HOZZÁFÉRÉS TESZT (Concurrency) ---
