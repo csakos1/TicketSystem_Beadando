@@ -26,12 +26,13 @@ namespace TicketSystem.UI
             while (true)
             {
                 Console.Clear();
-                Console.SetCursorPosition(0, 0);
+                if (OperatingSystem.IsWindows()) Console.SetCursorPosition(0, 0);
+
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine("=== TICKET RENDSZER BEJELENTKEZÉS ===");
                 Console.WriteLine("(Kilépéshez hagyd üresen és nyomj Entert)");
                 Console.Write("Kérem a User ID-t (pl. C001, A101, A102): ");
-                string userId = Console.ReadLine();
+                string? userId = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(userId)) break;
 
@@ -49,16 +50,15 @@ namespace TicketSystem.UI
             }
         }
 
-        // --- AGENT MENÜ ---
         private void AgentMenuLoop()
         {
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine($"=== MUNKATÁRS MENÜ ({_currentUser.Name}) ===");
-                Console.WriteLine("1. Jegyek listázása és Szűrés"); // Itt van az új szűrés
+                Console.WriteLine($"=== MUNKATÁRS MENÜ ({_currentUser!.Name}) ===");
+                Console.WriteLine("1. Jegyek listázása és Szűrés");
                 Console.WriteLine("2. Jegy keresése ID alapján");
-                Console.WriteLine("3. Statisztikák (Átlagos megoldási idővel)");
+                Console.WriteLine("3. Statisztikák");
                 Console.WriteLine("0. Kijelentkezés");
                 Console.Write("Választás: ");
 
@@ -72,14 +72,12 @@ namespace TicketSystem.UI
             }
         }
 
-        // --- CUSTOMER MENÜ ---
         private void CustomerMenuLoop()
         {
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine($"=== ÜGYFÉL MENÜ ({_currentUser.Name}) ===");
-                // Két külön menüpont a kért szűrésekre
+                Console.WriteLine($"=== ÜGYFÉL MENÜ ({_currentUser!.Name}) ===");
                 Console.WriteLine("1. Saját jegyeim (Időrendben)");
                 Console.WriteLine("2. Saját jegyeim (Státusz szerint)");
                 Console.WriteLine("3. Új jegy létrehozása");
@@ -89,8 +87,6 @@ namespace TicketSystem.UI
                 switch (Console.ReadLine())
                 {
                     case "1": ListTicketsScreen(false, sortByDate: true); break;
-                    // Itt szűrhetne is státuszra, de a feladat "sorrendet" kért vagy "státusz szerint" látást
-                    // Most egyszerűen csak nem időrendben listázunk, hanem alapértelmezetten
                     case "2": ListTicketsScreen(false, sortByDate: false); break;
                     case "3": CreateTicketScreen(); break;
                     case "0": return;
@@ -98,19 +94,19 @@ namespace TicketSystem.UI
             }
         }
 
-        // --- ÚJ, DINAMIKUS SZŰRŐ KÉPERNYŐ AGENTEKNEK ---
         private void FilterTicketsScreen()
         {
             Console.Clear();
             Console.WriteLine("--- SZŰRÉSI LEHETŐSÉGEK ---");
-            Console.WriteLine("1. Összes jegy (Szűrés nélkül)");
-            Console.WriteLine("2. Szűrés STÁTUSZ alapján");
-            Console.WriteLine("3. Szűrés KATEGÓRIA alapján");
-            Console.WriteLine("4. Szűrés KIOSZTÁS alapján (Saját / Másé)");
+            Console.WriteLine("1. Összes jegy");
+            Console.WriteLine("2. Csak a sajátjaim (Assigned to Me)");
+            Console.WriteLine("3. Szűrés STÁTUSZ alapján");
+            Console.WriteLine("4. Szűrés KATEGÓRIA alapján");
+            Console.WriteLine("5. Szűrés LÉTREHOZÁS DÁTUMA alapján");
             Console.WriteLine("0. Vissza");
             Console.Write("Választás: ");
 
-            string choice = Console.ReadLine();
+            string? choice = Console.ReadLine();
 
             switch (choice)
             {
@@ -118,51 +114,46 @@ namespace TicketSystem.UI
                     ListTicketsScreen(true);
                     break;
 
-                case "2": // Státusz választó almenü
+                case "2":
+                    // Itt javítottam: közvetlenül az ID-t adjuk át filterként
+                    ListTicketsScreen(true, assignedToFilter: _currentUser!.Id);
+                    break;
+
+                case "3":
                     var status = PickEnum<TicketStatus>("Válassz státuszt:");
                     if (status.HasValue) ListTicketsScreen(true, statusFilter: status.Value);
                     break;
 
-                case "3": // Kategória választó almenü
+                case "4":
                     var cat = PickEnum<TicketCategory>("Válassz kategóriát:");
                     if (cat.HasValue) ListTicketsScreen(true, catFilter: cat.Value);
                     break;
 
-                case "4": // Felelős szűrés
-                    Console.WriteLine("\nAdd meg az Agent ID-t (vagy hagyd üresen a sajátodhoz): ");
-                    string agentId = Console.ReadLine();
-                    if (string.IsNullOrWhiteSpace(agentId)) agentId = _currentUser.Id;
-                    ListTicketsScreen(true, assignedToFilter: agentId);
+                case "5":
+                    Console.Write("\nAdd meg a dátumot (ÉÉÉÉ-HH-NN): ");
+                    if (DateTime.TryParse(Console.ReadLine(), out DateTime date))
+                    {
+                        ListTicketsScreen(true, dateFilter: date);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Hibás dátum! Enter...");
+                        Console.ReadLine();
+                    }
                     break;
 
                 case "0": return;
             }
         }
 
-        // Segédfüggvény az Enumok listázásához (Generikus!)
-        private T? PickEnum<T>(string prompt) where T : struct, Enum
-        {
-            Console.Clear();
-            Console.WriteLine(prompt);
-            var values = Enum.GetValues<T>();
-            int i = 1;
-            foreach (var val in values)
-            {
-                Console.WriteLine($"{i}. {val}");
-                i++;
-            }
-            Console.Write("Választás száma: ");
-            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= values.Length)
-            {
-                return values[selection - 1];
-            }
-            Console.WriteLine("Érvénytelen választás!");
-            Console.ReadLine();
-            return null;
-        }
-
-        // --- LISTÁZÓ METÓDUS (Minden szűrést kezel) ---
-        private void ListTicketsScreen(bool isAgent, string? assignedToFilter = null, TicketStatus? statusFilter = null, TicketCategory? catFilter = null, bool sortByDate = false)
+        // JAVÍTVA: assignedToMe (bool) helyett assignedToFilter (string?)
+        private void ListTicketsScreen(
+            bool isAgent,
+            string? assignedToFilter = null,
+            TicketStatus? statusFilter = null,
+            TicketCategory? catFilter = null,
+            DateTime? dateFilter = null,
+            bool sortByDate = false)
         {
             int page = 0;
             int pageSize = 10;
@@ -171,16 +162,15 @@ namespace TicketSystem.UI
             {
                 Console.Clear();
                 Console.Write("=== JEGYEK LISTÁJA");
-                // Kiírjuk, hogy épp mi alapján szűrünk
-                if (statusFilter != null) Console.Write($" (Szűrve: {statusFilter})");
-                if (catFilter != null) Console.Write($" (Szűrve: {catFilter})");
+                if (statusFilter != null) Console.Write($" (Státusz: {statusFilter})");
+                if (catFilter != null) Console.Write($" (Kat: {catFilter})");
                 if (assignedToFilter != null) Console.Write($" (Felelős: {assignedToFilter})");
+                if (dateFilter != null) Console.Write($" (Dátum: {dateFilter:yyyy-MM-dd})");
                 Console.WriteLine(" ===");
 
-                string? customerFilter = isAgent ? null : _currentUser.Id;
+                string? customerFilter = isAgent ? null : _currentUser!.Id;
 
-                // BLL hívás a paraméterekkel
-                var tickets = _ticketService.GetTickets(assignedToFilter, statusFilter, catFilter, customerFilter, sortByDate);
+                var tickets = _ticketService.GetTickets(assignedToFilter, statusFilter, catFilter, customerFilter, dateFilter, sortByDate);
 
                 var pageItems = tickets.Skip(page * pageSize).Take(pageSize).ToList();
 
@@ -189,32 +179,32 @@ namespace TicketSystem.UI
 
                 foreach (var t in pageItems)
                 {
-                    TicketView.PrintListItem(t, _currentUser.Id);
+                    TicketView.PrintListItem(t, _currentUser!.Id);
                 }
 
                 Console.WriteLine(new string('-', 60));
                 Console.WriteLine($"Oldal: {page + 1} | [N] Köv. | [P] Előző | [ID] Megnyitás | [BACK] Vissza");
                 Console.Write("Parancs: ");
-                string input = Console.ReadLine()?.ToUpper();
+                string? input = Console.ReadLine()?.ToUpper();
 
                 if (input == "BACK") return;
                 if (input == "N") page++;
                 if (input == "P" && page > 0) page--;
-                if (input != null && input.StartsWith("T")) OpenTicketDetails(input);
+                if (!string.IsNullOrEmpty(input) && input.StartsWith("T")) OpenTicketDetails(input);
             }
         }
 
-        // --- RÉSZLETEK ÉS MŰVELETEK ---
         private void OpenTicketDetails(string ticketId)
         {
             var ticket = _ticketService.GetTicketById(ticketId);
             if (ticket == null) { Console.WriteLine("Nincs ilyen jegy! Enter..."); Console.ReadLine(); return; }
 
-            bool isAgent = _currentUser.Role == UserRole.Agent;
+            bool isAgent = _currentUser!.Role == UserRole.Agent;
 
             while (true)
             {
-                ticket = _ticketService.GetTicketById(ticketId); // Frissítés
+                ticket = _ticketService.GetTicketById(ticketId);
+                if (ticket == null) return; // Ha közben törölték volna
 
                 TicketView.PrintDetails(ticket, isAgent);
                 if (isAgent) TicketView.PrintHistory(ticket.History);
@@ -231,7 +221,7 @@ namespace TicketSystem.UI
                 }
                 Console.WriteLine("0. Vissza");
                 Console.Write("Választás: ");
-                string choice = Console.ReadLine();
+                string? choice = Console.ReadLine();
 
                 try
                 {
@@ -239,16 +229,17 @@ namespace TicketSystem.UI
                     if (choice == "1")
                     {
                         Console.Write("Üzenet: ");
-                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, Console.ReadLine(), false);
+                        string msg = Console.ReadLine() ?? ""; // Null check javítva
+                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, msg, false);
                     }
                     if (choice == "4" && isAgent)
                     {
                         Console.Write("BELSŐ megjegyzés: ");
-                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, Console.ReadLine(), true);
+                        string msg = Console.ReadLine() ?? ""; // Null check javítva
+                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, msg, true);
                     }
                     if (choice == "2" && isAgent)
                     {
-                        // Itt is használhatjuk a szép Enum választót!
                         var newStatus = PickEnum<TicketStatus>("Új státusz:");
                         if (newStatus.HasValue)
                             _ticketService.ChangeStatus(ticket.TicketId, newStatus.Value, _currentUser.Id);
@@ -256,7 +247,7 @@ namespace TicketSystem.UI
                     if (choice == "3" && isAgent)
                     {
                         Console.Write("Kinek adjuk át? (pl. A101, A102): ");
-                        string targetAgent = Console.ReadLine();
+                        string targetAgent = Console.ReadLine() ?? ""; // Null check javítva
                         _ticketService.AssignTicket(ticket.TicketId, targetAgent, _currentUser.Id);
                         Console.WriteLine("Átadva!");
                         System.Threading.Thread.Sleep(500);
@@ -276,17 +267,18 @@ namespace TicketSystem.UI
         {
             Console.Clear();
             Console.WriteLine("=== ÚJ JEGY ===");
-            Console.Write("Cím: "); string title = Console.ReadLine();
-            Console.Write("Leírás: "); string desc = Console.ReadLine();
+            Console.Write("Cím: ");
+            string title = Console.ReadLine() ?? ""; // Null check
+            Console.Write("Leírás: ");
+            string desc = Console.ReadLine() ?? "";  // Null check
 
-            // Enum választó használata itt is
             var cat = PickEnum<TicketCategory>("Válassz kategóriát:");
 
             if (cat.HasValue)
             {
                 try
                 {
-                    var t = _ticketService.CreateTicket(_currentUser.Id, title, desc, cat.Value);
+                    var t = _ticketService.CreateTicket(_currentUser!.Id, title, desc, cat.Value);
                     Console.WriteLine($"Siker! ID: {t.TicketId}. Enter...");
                     Console.ReadLine();
                 }
@@ -297,7 +289,7 @@ namespace TicketSystem.UI
         private void FindTicketScreen()
         {
             Console.Write("Ticket ID: ");
-            string id = Console.ReadLine();
+            string? id = Console.ReadLine();
             if (!string.IsNullOrEmpty(id)) OpenTicketDetails(id);
         }
 
@@ -307,6 +299,27 @@ namespace TicketSystem.UI
             Console.WriteLine(_statsService.GenerateReport());
             Console.WriteLine("\nEnter...");
             Console.ReadLine();
+        }
+
+        private T? PickEnum<T>(string prompt) where T : struct, Enum
+        {
+            Console.Clear();
+            Console.WriteLine(prompt);
+            var values = Enum.GetValues<T>();
+            int i = 1;
+            foreach (var val in values)
+            {
+                Console.WriteLine($"{i}. {val}");
+                i++;
+            }
+            Console.Write("Választás száma: ");
+            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= values.Length)
+            {
+                return (T)values.GetValue(selection - 1)!;
+            }
+            Console.WriteLine("Érvénytelen választás!");
+            Console.ReadLine();
+            return null;
         }
     }
 }

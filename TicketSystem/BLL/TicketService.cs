@@ -32,14 +32,15 @@ namespace TicketSystem.BLL
             return ticket;
         }
 
+        // JAVÍTVA: Új paraméter hozzáadva: DateTime? dateFilter
         public List<Ticket> GetTickets(
             string? assignedToFilter = null,
             TicketStatus? statusFilter = null,
             TicketCategory? categoryFilter = null,
             string? customerIdFilter = null,
+            DateTime? dateFilter = null, // <--- ÚJ PARAMÉTER
             bool sortByDateDesc = false)
         {
-            // AUTOMATA LEZÁRÁS ELLENŐRZÉSE LISTÁZÁSKOR
             CheckAndAutoCloseTickets();
 
             var tickets = _ticketRepo.GetAll().AsQueryable();
@@ -55,6 +56,10 @@ namespace TicketSystem.BLL
 
             if (customerIdFilter != null)
                 tickets = tickets.Where(t => t.CustomerId == customerIdFilter);
+
+            // ÚJ: Dátum szűrés (csak a napot nézzük, az órát/percet nem)
+            if (dateFilter != null)
+                tickets = tickets.Where(t => t.CreatedAt.Date == dateFilter.Value.Date);
 
             if (sortByDateDesc)
                 tickets = tickets.OrderByDescending(t => t.CreatedAt);
@@ -145,7 +150,6 @@ namespace TicketSystem.BLL
 
             ticket.Status = newStatus;
 
-            // Ha Megoldott, beállítjuk az időt az AutoClose-hoz
             if (newStatus == TicketStatus.Resolved)
             {
                 ticket.ResolvedAt = DateTime.Now;
@@ -156,16 +160,13 @@ namespace TicketSystem.BLL
             }
         }
 
-        // --- AUTOMATA LEZÁRÁS LOGIKA ---
         private void CheckAndAutoCloseTickets()
         {
-            // Lekérjük azokat, amik Megoldottak, és van dátumuk
             var resolvedTickets = _ticketRepo.GetAll()
                 .Where(t => t.Status == TicketStatus.Resolved && t.ResolvedAt != null).ToList();
 
             foreach (var t in resolvedTickets)
             {
-                // TESZT CÉLJÁBÓL: 1 perc után lezárjuk (Valóságban ez napok lennének)
                 if (t.ResolvedAt.HasValue && (DateTime.Now - t.ResolvedAt.Value).TotalMinutes >= 1)
                 {
                     t.History.Add(new StatusChangeLog("RENDSZER", "Resolved", "Closed"));
