@@ -17,9 +17,14 @@ namespace TicketSystem.DAL
             _tickets = new List<Ticket>();
         }
 
+        private readonly object _lock = new object();
+
         public void Add(Ticket ticket)
         {
-            _tickets.Add(ticket);
+            lock (_lock) // Csak egy szál léphet be ide egyszerre
+            {
+                _tickets.Add(ticket);
+            }
         }
 
         public List<Ticket> GetAll()
@@ -42,7 +47,10 @@ namespace TicketSystem.DAL
 
         public int GetNextId()
         {
-            return _tickets.Count + 1;
+            lock (_lock) // Itt is zárni kell
+            {
+                return _tickets.Count + 1;
+            }
         }
     }
 }
