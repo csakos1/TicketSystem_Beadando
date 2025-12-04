@@ -47,6 +47,22 @@ namespace TicketSystem.BLL
             double ratio = tickets.Count > 0 ? (double)closedCount / tickets.Count * 100 : 0;
             sb.AppendLine($"\nMegoldott/Lezárt arány: {ratio:F1}%");
 
+            // 4. Átlagos megoldási idő (Created -> Resolved/Closed)
+            var resolvedOrClosed = tickets
+                .Where(t => (t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed) && t.ResolvedAt != null)
+                .ToList();
+
+            if (resolvedOrClosed.Count > 0)
+            {
+                double avgMinutes = resolvedOrClosed
+                    .Average(t => (t.ResolvedAt.Value - t.CreatedAt).TotalMinutes);
+                sb.AppendLine($"\nÁtlagos megoldási idő: {avgMinutes:F1} perc");
+            }
+            else
+            {
+                sb.AppendLine("\nÁtlagos megoldási idő: Nincs elég adat");
+            }
+
             return sb.ToString();
         }
     }

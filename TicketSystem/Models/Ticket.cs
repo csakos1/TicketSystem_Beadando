@@ -8,22 +8,22 @@ namespace TicketSystem.Models
 {
     public class Ticket
     {
-        public string TicketId { get; set; }        // Egyedi azonosító, pl. "T001"
-        public string CustomerId { get; set; }      // Kié a jegy?
-        public string AssignedAgentId { get; set; } // Ki dolgozik rajta? (lehet null)
+        public string TicketId { get; set; } = string.Empty;
+        public string CustomerId { get; set; } = string.Empty;
+        public string? AssignedAgentId { get; set; } // Ez lehet null (? jel)
 
-        public string Title { get; set; }           // Rövid cím
-        public string Description { get; set; }     // Hosszú leírás
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
 
-        public TicketCategory Category { get; set; } // Enum
-        public TicketStatus Status { get; set; }     // Enum (Állapot)
+        public TicketCategory Category { get; set; }
+        public TicketStatus Status { get; set; }
 
-        public DateTime CreatedAt { get; set; }      // Létrehozás ideje
+        public DateTime CreatedAt { get; set; }
+        public DateTime? ResolvedAt { get; set; }
 
-        // Ez a lista tárolja a beszélgetést (Kompozíció)
         public List<Message> Messages { get; set; } = new List<Message>();
+        public List<StatusChangeLog> History { get; set; } = new List<StatusChangeLog>();
 
-        // Konstruktor új jegy létrehozásához
         public Ticket(string id, string customerId, string title, string description, TicketCategory category)
         {
             TicketId = id;
@@ -32,13 +32,11 @@ namespace TicketSystem.Models
             Description = description;
             Category = category;
 
-            // Alapértelmezett értékek beállítása
             Status = TicketStatus.New;
             CreatedAt = DateTime.Now;
-            AssignedAgentId = null; // Még senki nem vette fel
+            AssignedAgentId = null;
         }
 
-        // Üres konstruktor JSON-höz
         public Ticket() { }
     }
 }

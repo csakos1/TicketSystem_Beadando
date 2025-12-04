@@ -1,102 +1,105 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TicketSystem.Models;
-
 
 namespace TicketSystem.UI
 {
     public static class TicketView
     {
-        // Listázásnál egy sorba írunk mindent
-        public static void PrintListItem(Ticket t)
+        public static void PrintListItem(Ticket t, string currentUserId)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write($"[{t.TicketId}] ");
-            Console.ResetColor();
 
-            // Cím hossza limitálva, hogy kiférjen
-            string title = t.Title.Length > 30 ? t.Title.Substring(0, 27) + "..." : t.Title.PadRight(30);
-            Console.Write($"{title} ");
+            // Ha hozzám van rendelve, jelöljük meg!
+            if (t.AssignedAgentId == currentUserId)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.BackgroundColor = ConsoleColor.DarkBlue;
+                Console.Write(" [SAJÁT] ");
+                Console.ResetColor();
+            }
 
-            // Státusz színezése
+            string title = t.Title.Length > 25 ? t.Title.Substring(0, 22) + "..." : t.Title.PadRight(25);
+            Console.Write($" {title} ");
+
             switch (t.Status)
             {
                 case TicketStatus.New: Console.ForegroundColor = ConsoleColor.Green; break;
                 case TicketStatus.Closed: Console.ForegroundColor = ConsoleColor.DarkGray; break;
                 case TicketStatus.InProgress: Console.ForegroundColor = ConsoleColor.Yellow; break;
                 case TicketStatus.WaitingForUser: Console.ForegroundColor = ConsoleColor.Magenta; break;
+                case TicketStatus.Resolved: Console.ForegroundColor = ConsoleColor.Blue; break;
             }
-            Console.Write($"{t.Status.ToString().PadRight(12)}"); // Fix szélesség
+            Console.Write($"{t.Status.ToString().PadRight(14)}");
             Console.ResetColor();
 
-            Console.WriteLine($" | {t.Category}");
+            Console.WriteLine($" | {t.Category} | {t.CreatedAt:MM.dd HH:mm}");
         }
 
-        // Részletes nézet - TÖMÖRÍTVE
-        public static void PrintDetails(Ticket ticket)
+        public static void PrintDetails(Ticket ticket, bool isAgent)
         {
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"--- JEGY ADATLAP: {ticket.TicketId} ---");
             Console.ResetColor();
-
-            // Egy sorba több adatot teszünk
-            Console.WriteLine($"Cím: {ticket.Title} | Kat: {ticket.Category} | Létrehozva: {ticket.CreatedAt:yyyy-MM-dd}");
-
+            Console.WriteLine($"Cím: {ticket.Title} | Kat: {ticket.Category} | Létrehozva: {ticket.CreatedAt:yyyy-MM-dd HH:mm}");
             Console.Write("Státusz: ");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"{ticket.Status}   ");
             Console.ResetColor();
             Console.WriteLine($"Felelős: {(ticket.AssignedAgentId ?? "-")}");
-
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("------------------------------------------------------------");
             Console.ResetColor();
-
             Console.WriteLine("LEÍRÁS:");
             Console.WriteLine(ticket.Description);
             Console.WriteLine();
         }
 
-        // Üzenetek - CSAK AZ UTOLSÓ 5 DB és EGY SORBAN
-        public static void PrintMessages(List<Message> messages)
+        public static void PrintMessages(List<Message> messages, bool isAgent)
         {
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine("--- UTOLSÓ ÜZENETEK ---");
+            Console.WriteLine("--- ÜZENETEK ---");
             Console.ResetColor();
 
-            if (messages.Count == 0)
+            if (messages.Count == 0) Console.WriteLine("(Nincs üzenet)");
+
+            foreach (var msg in messages.TakeLast(6))
             {
-                Console.WriteLine("(Nincs üzenet)");
-            }
-            else
-            {
-                // Csak az utolsó 5 üzenetet mutatjuk, hogy ne kelljen görgetni
-                var lastMessages = messages.TakeLast(5).ToList();
+                // Ha belső üzenet és nem agent nézi, akkor kihagyjuk
+                if (msg.IsInternal && !isAgent) continue;
 
-                foreach (var msg in lastMessages)
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write($"[{msg.Timestamp:HH:mm}] ");
+
+                if (msg.IsInternal)
                 {
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    Console.Write($"[{msg.Timestamp:HH:mm}] ");
-
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.Write($"{msg.Sender}: ");
-
-                    Console.ResetColor();
-                    Console.WriteLine(msg.Text);
-                }
-
-                if (messages.Count > 5)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine($"... (további {messages.Count - 5} régebbi üzenet elrejtve)");
+                    Console.BackgroundColor = ConsoleColor.DarkRed;
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.Write("[BELSŐ] ");
                     Console.ResetColor();
                 }
+
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write($"{msg.Sender}: ");
+                Console.ResetColor();
+                Console.WriteLine(msg.Text);
             }
             Console.WriteLine("------------------------------------------------------------");
+        }
+
+        public static void PrintHistory(List<StatusChangeLog> history)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("NAPLÓ (utolsó 3 esemény):");
+            foreach (var log in history.TakeLast(3))
+            {
+                Console.WriteLine($" > {log.Timestamp:HH:mm} [{log.ModifierName}]: {log.OldStatus} -> {log.NewStatus}");
+            }
+            Console.WriteLine("------------------------------------------------------------");
+            Console.ResetColor();
         }
     }
 }

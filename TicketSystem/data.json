@@ -11,6 +11,12 @@
       "name": "Horváth Gábor",
       "email": "gabor.horvath@company.com",
       "role": "Agent"
+    },
+    {
+      "id": "A102",
+      "name": "Nagy Anna",
+      "email": "anna.nagy@company.com",
+      "role": "Agent"
     }
   ],
   "tickets": [

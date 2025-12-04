@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TicketSystem.BLL;
 using TicketSystem.Models;
 using TicketSystem.DAL;
@@ -14,7 +12,7 @@ namespace TicketSystem.UI
         private readonly TicketService _ticketService;
         private readonly StatisticsService _statsService;
         private readonly IUserRepository _userRepo;
-        private User _currentUser;
+        private User? _currentUser;
 
         public MainMenu(TicketService ticketService, StatisticsService statsService, IUserRepository userRepo)
         {
@@ -23,16 +21,16 @@ namespace TicketSystem.UI
             _userRepo = userRepo;
         }
 
-        // --- FŐ BELÉPÉSI PONT ---
         public void Show()
         {
             while (true)
             {
                 Console.Clear();
+                Console.SetCursorPosition(0, 0);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine("=== TICKET RENDSZER BEJELENTKEZÉS ===");
                 Console.WriteLine("(Kilépéshez hagyd üresen és nyomj Entert)");
-                Console.Write("Kérem a User ID-t (pl. C001 vagy A101): ");
+                Console.Write("Kérem a User ID-t (pl. C001, A101, A102): ");
                 string userId = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(userId)) break;
@@ -41,37 +39,23 @@ namespace TicketSystem.UI
 
                 if (_currentUser == null)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Hibás azonosító! Nyomj Entert...");
-                    Console.ResetColor();
+                    Console.WriteLine("Hibás azonosító! Enter...");
                     Console.ReadLine();
                     continue;
                 }
 
-                Console.WriteLine($"Üdvözöllek, {_currentUser.Name} ({_currentUser.Role})!");
-                System.Threading.Thread.Sleep(1000);
-
-                if (_currentUser.Role == UserRole.Agent)
-                {
-                    AgentMenuLoop();
-                }
-                else
-                {
-                    CustomerMenuLoop();
-                }
+                if (_currentUser.Role == UserRole.Agent) AgentMenuLoop();
+                else CustomerMenuLoop();
             }
         }
 
-        // --- MUNKATÁRS MENÜ ---
         private void AgentMenuLoop()
         {
             while (true)
             {
                 Console.Clear();
-                Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine($"=== MUNKATÁRS MENÜ ({_currentUser.Name}) ===");
-                Console.ResetColor();
-                Console.WriteLine("1. Összes nyitott jegy listázása");
+                Console.WriteLine("1. Jegyek listázása (Szűrés)");
                 Console.WriteLine("2. Jegy keresése ID alapján");
                 Console.WriteLine("3. Statisztikák");
                 Console.WriteLine("0. Kijelentkezés");
@@ -79,7 +63,7 @@ namespace TicketSystem.UI
 
                 switch (Console.ReadLine())
                 {
-                    case "1": ListTicketsScreen(isAgent: true); break;
+                    case "1": FilterTicketsScreen(); break; // ÚJ szűrő menü
                     case "2": FindTicketScreen(); break;
                     case "3": ShowStatisticsScreen(); break;
                     case "0": return;
@@ -87,114 +71,111 @@ namespace TicketSystem.UI
             }
         }
 
-        // --- ÜGYFÉL MENÜ ---
         private void CustomerMenuLoop()
         {
             while (true)
             {
                 Console.Clear();
-                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"=== ÜGYFÉL MENÜ ({_currentUser.Name}) ===");
-                Console.ResetColor();
-                Console.WriteLine("1. Saját jegyeim listázása");
-                Console.WriteLine("2. Új jegy létrehozása");
+                Console.WriteLine("1. Saját jegyeim (Időrendben)");
+                Console.WriteLine("2. Saját jegyeim (Státusz szerint)");
+                Console.WriteLine("3. Új jegy létrehozása");
                 Console.WriteLine("0. Kijelentkezés");
                 Console.Write("Választás: ");
 
                 switch (Console.ReadLine())
                 {
-                    case "1": ListTicketsScreen(isAgent: false); break;
-                    case "2": CreateTicketScreen(); break;
+                    case "1": ListTicketsScreen(false, sortByDate: true); break;
+                    case "2": ListTicketsScreen(false, sortByDate: false); break; // Alapból nem, de lehetne status filtert kérni
+                    case "3": CreateTicketScreen(); break;
                     case "0": return;
                 }
             }
         }
 
-        // --- LISTÁZÁS (Itt használjuk a TicketView-t!) ---
-        private void ListTicketsScreen(bool isAgent)
+        // ÚJ: Szűrő menü Agenteknek
+        private void FilterTicketsScreen()
+        {
+            Console.Clear();
+            Console.WriteLine("--- SZŰRÉSI LEHETŐSÉGEK ---");
+            Console.WriteLine("1. Összes jegy");
+            Console.WriteLine("2. Csak a sajátjaim (Assigned to Me)");
+            Console.WriteLine("3. Csak 'Új' státuszúak");
+            Console.WriteLine("4. Csak 'Technical' kategória");
+            Console.Write("Választás: ");
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "2": ListTicketsScreen(true, assignedToMe: true); break;
+                case "3": ListTicketsScreen(true, statusFilter: TicketStatus.New); break;
+                case "4": ListTicketsScreen(true, catFilter: TicketCategory.Technical); break;
+                default: ListTicketsScreen(true); break; // Összes
+            }
+        }
+
+        private void ListTicketsScreen(bool isAgent, bool assignedToMe = false, TicketStatus? statusFilter = null, TicketCategory? catFilter = null, bool sortByDate = false)
         {
             int page = 0;
-            int pageSize = 10; // 10 jegy kényelmesen elfér a képernyőn az új kompakt nézettel
+            int pageSize = 10;
 
             while (true)
             {
                 Console.Clear();
                 Console.WriteLine("=== JEGYEK LISTÁJA ===");
-                Console.WriteLine($"{"[ID]",-7} {"CÍM",-31} {"STÁTUSZ",-12} | KATEGÓRIA"); // Fejléc
-                Console.WriteLine(new string('-', 60));
 
-                List<Ticket> tickets;
-                if (isAgent)
-                {
-                    tickets = _ticketService.GetTickets();
-                }
-                else
-                {
-                    tickets = _ticketService.GetTickets().Where(t => t.CustomerId == _currentUser.Id).ToList();
-                }
+                string agentFilter = assignedToMe ? _currentUser.Id : null;
+                string customerFilter = isAgent ? null : _currentUser.Id;
+
+                // Meghívjuk a BLL bővített metódusát
+                var tickets = _ticketService.GetTickets(agentFilter, statusFilter, catFilter, customerFilter, sortByDate);
 
                 var pageItems = tickets.Skip(page * pageSize).Take(pageSize).ToList();
 
-                if (pageItems.Count == 0 && page > 0)
-                {
-                    page--;
-                    continue;
-                }
+                if (pageItems.Count == 0 && page > 0) { page--; continue; }
 
                 foreach (var t in pageItems)
                 {
-                    TicketView.PrintListItem(t);
+                    TicketView.PrintListItem(t, _currentUser.Id);
                 }
 
-                // Üres sorok kitöltése, hogy a menü mindig ugyanott legyen (opcionális, de szép)
-                int emptyLines = pageSize - pageItems.Count;
-                for (int i = 0; i < emptyLines; i++) Console.WriteLine();
-
                 Console.WriteLine(new string('-', 60));
-                // Itt a menü, és közvetlenül utána jön majd a kurzor
                 Console.WriteLine($"Oldal: {page + 1} | [N] Köv. | [P] Előző | [ID] Megnyitás | [BACK] Vissza");
-                Console.Write("Választás: "); // Itt villog majd a kurzor
-
+                Console.Write("Választás: ");
                 string input = Console.ReadLine()?.ToUpper();
 
                 if (input == "BACK") return;
                 if (input == "N") page++;
                 if (input == "P" && page > 0) page--;
-
-                if (input != null && input.StartsWith("T"))
-                {
-                    OpenTicketDetails(input);
-                }
+                if (input != null && input.StartsWith("T")) OpenTicketDetails(input);
             }
         }
 
-        // --- JEGY RÉSZLETEK (Itt is TicketView-t használunk!) ---
         private void OpenTicketDetails(string ticketId)
         {
             var ticket = _ticketService.GetTicketById(ticketId);
-            if (ticket == null)
-            {
-                Console.WriteLine("Nincs ilyen jegy! Enter...");
-                Console.ReadLine();
-                return;
-            }
+            if (ticket == null) { Console.WriteLine("Nincs ilyen jegy! Enter..."); Console.ReadLine(); return; }
+
+            bool isAgent = _currentUser.Role == UserRole.Agent;
 
             while (true)
             {
-                // 1. Megjelenítés kiszervezve a TicketView osztályba
-                TicketView.PrintDetails(ticket);
-                TicketView.PrintMessages(ticket.Messages);
+                // Frissítjük az objektumot (hátha változott)
+                ticket = _ticketService.GetTicketById(ticketId);
 
-                // 2. Menü kirajzolása
+                TicketView.PrintDetails(ticket, isAgent);
+                if (isAgent) TicketView.PrintHistory(ticket.History); // Csak agent látja a naplót
+                TicketView.PrintMessages(ticket.Messages, isAgent);
+
                 Console.WriteLine("MŰVELETEK:");
                 Console.WriteLine("1. Üzenet írása");
 
-                if (_currentUser.Role == UserRole.Agent)
+                if (isAgent)
                 {
                     Console.WriteLine("2. Státusz módosítása");
-                    Console.WriteLine("3. Jegy átvétele (Assign)");
+                    Console.WriteLine("3. Átadás másnak / Átvétel");
+                    Console.WriteLine("4. Belső megjegyzés írása (Internal Note)");
                 }
-
                 Console.WriteLine("0. Vissza");
                 Console.Write("Választás: ");
                 string choice = Console.ReadLine();
@@ -202,31 +183,28 @@ namespace TicketSystem.UI
                 try
                 {
                     if (choice == "0") return;
-
                     if (choice == "1")
                     {
                         Console.Write("Üzenet: ");
-                        string msg = Console.ReadLine();
-                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, msg);
-                        Console.WriteLine("Üzenet elküldve!");
-                        System.Threading.Thread.Sleep(500); // Kis szünet, hogy lássa a kiírást
+                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, Console.ReadLine(), false);
                     }
-
-                    if (choice == "2" && _currentUser.Role == UserRole.Agent)
+                    if (choice == "4" && isAgent)
+                    {
+                        Console.Write("BELSŐ megjegyzés: ");
+                        _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, Console.ReadLine(), true);
+                    }
+                    if (choice == "2" && isAgent)
                     {
                         Console.WriteLine("Új státusz (0:New, 1:InProgress, 2:Waiting, 3:Resolved, 4:Closed):");
-                        if (int.TryParse(Console.ReadLine(), out int statusInt))
-                        {
-                            _ticketService.ChangeStatus(ticket.TicketId, (TicketStatus)statusInt);
-                            Console.WriteLine("Státusz módosítva!");
-                            System.Threading.Thread.Sleep(500);
-                        }
+                        if (int.TryParse(Console.ReadLine(), out int s))
+                            _ticketService.ChangeStatus(ticket.TicketId, (TicketStatus)s, _currentUser.Id);
                     }
-
-                    if (choice == "3" && _currentUser.Role == UserRole.Agent)
+                    if (choice == "3" && isAgent)
                     {
-                        _ticketService.AssignTicket(ticket.TicketId, _currentUser.Id);
-                        Console.WriteLine("Jegy hozzád rendelve!");
+                        Console.Write("Kinek adjuk át? (pl. A101, A102): ");
+                        string targetAgent = Console.ReadLine();
+                        _ticketService.AssignTicket(ticket.TicketId, targetAgent, _currentUser.Id);
+                        Console.WriteLine("Átadva!");
                         System.Threading.Thread.Sleep(500);
                     }
                 }
@@ -240,56 +218,36 @@ namespace TicketSystem.UI
             }
         }
 
-        // --- ÚJ JEGY LÉTREHOZÁSA ---
         private void CreateTicketScreen()
         {
             Console.Clear();
-            Console.WriteLine("=== ÚJ JEGY LÉTREHOZÁSA ===");
-            Console.Write("Cím: ");
-            string title = Console.ReadLine();
-            Console.Write("Leírás: ");
-            string desc = Console.ReadLine();
-
+            Console.WriteLine("=== ÚJ JEGY ===");
+            Console.Write("Cím: "); string title = Console.ReadLine();
+            Console.Write("Leírás: "); string desc = Console.ReadLine();
             Console.WriteLine("Kategória (0:General, 1:Technical, 2:Billing, 3:Password): ");
             int catInt = int.Parse(Console.ReadLine() ?? "0");
 
             try
             {
                 var t = _ticketService.CreateTicket(_currentUser.Id, title, desc, (TicketCategory)catInt);
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"Jegy sikeresen létrehozva! ID: {t.TicketId}");
-                Console.ResetColor();
-                Console.WriteLine("Nyomj Entert...");
+                Console.WriteLine($"Siker! ID: {t.TicketId}. Enter...");
                 Console.ReadLine();
             }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Hiba: {ex.Message}");
-                Console.ResetColor();
-                Console.ReadLine();
-            }
+            catch (Exception ex) { Console.WriteLine(ex.Message); Console.ReadLine(); }
         }
 
-        // --- JEGY KERESÉSE ---
         private void FindTicketScreen()
         {
-            Console.Write("Add meg a Ticket ID-t (pl. T001): ");
+            Console.Write("Ticket ID: ");
             string id = Console.ReadLine();
-            if (!string.IsNullOrWhiteSpace(id))
-            {
-                OpenTicketDetails(id);
-            }
+            if (!string.IsNullOrEmpty(id)) OpenTicketDetails(id);
         }
 
-        // --- STATISZTIKA ---
         private void ShowStatisticsScreen()
         {
             Console.Clear();
-            // A StatisticsService generálja a szöveget, mi csak kiírjuk
             Console.WriteLine(_statsService.GenerateReport());
-            Console.WriteLine("\nNyomj Entert a visszalépéshez...");
+            Console.WriteLine("\nEnter...");
             Console.ReadLine();
         }
     }

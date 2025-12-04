@@ -8,13 +8,11 @@ namespace TicketSystem.Models
 {
     public class User
     {
-        // Ezek a Property-k (Adattagok)
-        public string Id { get; set; }      // pl. "C001"
-        public string Name { get; set; }    // pl. "Kiss Péter"
-        public string Email { get; set; }   // pl. "peter@example.com"
-        public UserRole Role { get; set; }  // Enum használata
+        public string Id { get; set; } = string.Empty; // Alapérték beállítása
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
 
-        // Konstruktor (hogy könnyű legyen létrehozni)
         public User(string id, string name, string email, UserRole role)
         {
             Id = id;
@@ -23,7 +21,6 @@ namespace TicketSystem.Models
             Role = role;
         }
 
-        // Üres konstruktor a későbbi JSON betöltéshez (néha kell)
         public User() { }
     }
 }

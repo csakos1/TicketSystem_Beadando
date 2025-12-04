@@ -8,18 +8,19 @@ namespace TicketSystem.Models
 {
     public class Message
     {
-        public string Sender { get; set; }      // Ki írta? (pl. "customer" vagy a név)
-        public string Text { get; set; }        // Az üzenet szövege
-        public DateTime Timestamp { get; set; } // Mikor írta?
+        public string Sender { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public bool IsInternal { get; set; }
 
-        public Message(string sender, string text)
+        public Message(string sender, string text, bool isInternal = false)
         {
             Sender = sender;
             Text = text;
-            Timestamp = DateTime.Now; // Létrehozáskor az aktuális időt kapja
+            Timestamp = DateTime.Now;
+            IsInternal = isInternal;
         }
 
-        // Üres konstruktor JSON-höz
         public Message() { }
     }
 }
