@@ -10,6 +10,7 @@ namespace TicketSystem.App
     {
         static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             if (OperatingSystem.IsWindows())
             {
@@ -18,13 +19,10 @@ namespace TicketSystem.App
                     Console.SetWindowSize(100, 30);
                     Console.SetBufferSize(100, 300);
                 }
-                catch (Exception)
-                {
-                }
+                catch (Exception) { }
             }
             Console.CursorVisible = true;
 
-            // 1. Réteg: Adathozzáférés (DAL)
             ITicketRepository ticketRepo = new TicketRepository();
             IUserRepository userRepo = new UserRepository();
 
@@ -34,11 +32,9 @@ namespace TicketSystem.App
             JsonDataLoader.LoadData(jsonPath, userRepo, ticketRepo);
             System.Threading.Thread.Sleep(500);
 
-            // 2. Réteg: Üzleti Logika (BLL)
             TicketService ticketService = new TicketService(ticketRepo, userRepo);
             StatisticsService statsService = new StatisticsService(ticketRepo);
 
-            // 3. Réteg: UI indítása
             MainMenu menu = new MainMenu(ticketService, statsService, userRepo);
             menu.Show();
         }
