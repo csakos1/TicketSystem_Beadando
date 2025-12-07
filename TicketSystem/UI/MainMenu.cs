@@ -115,7 +115,6 @@ namespace TicketSystem.UI
                     break;
 
                 case "2":
-                    // Itt javítottam: közvetlenül az ID-t adjuk át filterként
                     ListTicketsScreen(true, assignedToFilter: _currentUser!.Id);
                     break;
 
@@ -146,7 +145,6 @@ namespace TicketSystem.UI
             }
         }
 
-        // JAVÍTVA: assignedToMe (bool) helyett assignedToFilter (string?)
         private void ListTicketsScreen(
             bool isAgent,
             string? assignedToFilter = null,
@@ -204,7 +202,7 @@ namespace TicketSystem.UI
             while (true)
             {
                 ticket = _ticketService.GetTicketById(ticketId);
-                if (ticket == null) return; // Ha közben törölték volna
+                if (ticket == null) return;
 
                 TicketView.PrintDetails(ticket, isAgent);
                 if (isAgent) TicketView.PrintHistory(ticket.History);
@@ -229,13 +227,13 @@ namespace TicketSystem.UI
                     if (choice == "1")
                     {
                         Console.Write("Üzenet: ");
-                        string msg = Console.ReadLine() ?? ""; // Null check javítva
+                        string msg = Console.ReadLine() ?? "";
                         _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, msg, false);
                     }
                     if (choice == "4" && isAgent)
                     {
                         Console.Write("BELSŐ megjegyzés: ");
-                        string msg = Console.ReadLine() ?? ""; // Null check javítva
+                        string msg = Console.ReadLine() ?? "";
                         _ticketService.AddMessage(ticket.TicketId, _currentUser.Id, msg, true);
                     }
                     if (choice == "2" && isAgent)
@@ -247,7 +245,7 @@ namespace TicketSystem.UI
                     if (choice == "3" && isAgent)
                     {
                         Console.Write("Kinek adjuk át? (pl. A101, A102): ");
-                        string targetAgent = Console.ReadLine() ?? ""; // Null check javítva
+                        string targetAgent = Console.ReadLine() ?? "";
                         _ticketService.AssignTicket(ticket.TicketId, targetAgent, _currentUser.Id);
                         Console.WriteLine("Átadva!");
                         System.Threading.Thread.Sleep(500);
@@ -268,9 +266,9 @@ namespace TicketSystem.UI
             Console.Clear();
             Console.WriteLine("=== ÚJ JEGY ===");
             Console.Write("Cím: ");
-            string title = Console.ReadLine() ?? ""; // Null check
+            string title = Console.ReadLine() ?? "";
             Console.Write("Leírás: ");
-            string desc = Console.ReadLine() ?? "";  // Null check
+            string desc = Console.ReadLine() ?? "";
 
             var cat = PickEnum<TicketCategory>("Válassz kategóriát:");
 

@@ -12,7 +12,7 @@ namespace TicketSystem.DAL
         void Add(Ticket ticket);                // Hozzáadás
         List<Ticket> GetAll();                  // Összes lekérése
         Ticket GetById(string id);              // Egy konkrét jegy lekérése
-        void Update(Ticket ticket);             // Frissítés (bár memóriában ez referencia miatt automatikus, de szép kiírni)
-        int GetNextId();                        // Segéd: következő ID generálásához
+        void Update(Ticket ticket);             // Frissítés
+        int GetNextId();                        // Segéd következő ID generálásához
     }
 }

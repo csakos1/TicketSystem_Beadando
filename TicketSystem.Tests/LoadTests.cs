@@ -31,7 +31,7 @@ namespace TicketSystem.Tests
         public void LargeVolumeTest_ShouldHandleManyTicketsWithinReasonableTime()
         {
             var service = CreateService();
-            int ticketCount = 100_000; // Kicsit visszavettem 1 millióról, hogy gyorsabb legyen a teszt futás
+            int ticketCount = 100_000;
             var stopwatch = Stopwatch.StartNew();
 
             for (int i = 0; i < ticketCount; i++)
@@ -43,7 +43,7 @@ namespace TicketSystem.Tests
             long createTime = stopwatch.ElapsedMilliseconds;
             _output.WriteLine($"{ticketCount} jegy létrehozása: {createTime} ms");
 
-            Assert.True(createTime < 5000, "A létrehozás túl lassú volt!");
+            Assert.True(createTime < 1000, "A létrehozás túl lassú volt!");
 
             stopwatch.Restart();
             var lastTicket = service.GetTickets().LastOrDefault();

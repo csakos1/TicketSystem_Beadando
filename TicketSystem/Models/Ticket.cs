@@ -10,7 +10,7 @@ namespace TicketSystem.Models
     {
         public string TicketId { get; set; } = string.Empty;
         public string CustomerId { get; set; } = string.Empty;
-        public string? AssignedAgentId { get; set; } // Ez lehet null (? jel)
+        public string? AssignedAgentId { get; set; }
 
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

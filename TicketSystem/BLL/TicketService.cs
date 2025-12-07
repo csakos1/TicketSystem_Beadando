@@ -32,13 +32,12 @@ namespace TicketSystem.BLL
             return ticket;
         }
 
-        // JAVÍTVA: Új paraméter hozzáadva: DateTime? dateFilter
         public List<Ticket> GetTickets(
             string? assignedToFilter = null,
             TicketStatus? statusFilter = null,
             TicketCategory? categoryFilter = null,
             string? customerIdFilter = null,
-            DateTime? dateFilter = null, // <--- ÚJ PARAMÉTER
+            DateTime? dateFilter = null,
             bool sortByDateDesc = false)
         {
             CheckAndAutoCloseTickets();
@@ -57,7 +56,6 @@ namespace TicketSystem.BLL
             if (customerIdFilter != null)
                 tickets = tickets.Where(t => t.CustomerId == customerIdFilter);
 
-            // ÚJ: Dátum szűrés (csak a napot nézzük, az órát/percet nem)
             if (dateFilter != null)
                 tickets = tickets.Where(t => t.CreatedAt.Date == dateFilter.Value.Date);
 

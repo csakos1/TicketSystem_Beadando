@@ -53,7 +53,6 @@ namespace TicketSystem.Tests
             var service = CreateServiceWithMockData();
             var ticket = service.CreateTicket("C001", "Teszt", "...", TicketCategory.General);
 
-            // JAVÍTVA: 3. paraméter (modifierUserId) hozzáadva
             service.AssignTicket(ticket.TicketId, "A101", "A101");
 
             var updatedTicket = service.GetTicketById(ticket.TicketId);
@@ -68,7 +67,6 @@ namespace TicketSystem.Tests
             var service = CreateServiceWithMockData();
             var ticket = service.CreateTicket("C001", "Teszt", "...", TicketCategory.General);
 
-            // JAVÍTVA: 3. paraméter hozzáadva
             Assert.Throws<Exception>(() => service.AssignTicket(ticket.TicketId, "C001", "A101"));
         }
 
@@ -78,7 +76,6 @@ namespace TicketSystem.Tests
             var service = CreateServiceWithMockData();
             var ticket = service.CreateTicket("C001", "Teszt", "...", TicketCategory.General);
 
-            // JAVÍTVA: 4. paraméter (isInternal) hozzáadva
             service.AddMessage(ticket.TicketId, "C001", "Új infó", false);
 
             Assert.Single(ticket.Messages);
@@ -91,10 +88,8 @@ namespace TicketSystem.Tests
             var service = CreateServiceWithMockData();
             var ticket = service.CreateTicket("C001", "Teszt", "...", TicketCategory.General);
 
-            // JAVÍTVA: 3. paraméter (modifier) hozzáadva
             service.ChangeStatus(ticket.TicketId, TicketStatus.WaitingForUser, "A101");
 
-            // JAVÍTVA: 4. paraméter hozzáadva
             service.AddMessage(ticket.TicketId, "C001", "Itt a válaszom", false);
 
             Assert.Equal(TicketStatus.InProgress, ticket.Status);
@@ -106,7 +101,6 @@ namespace TicketSystem.Tests
             var service = CreateServiceWithMockData();
             var ticket = service.CreateTicket("C001", "Teszt", "...", TicketCategory.General);
 
-            // JAVÍTVA: 3. paraméter hozzáadva
             service.ChangeStatus(ticket.TicketId, TicketStatus.Resolved, "A101");
 
             Assert.Equal(TicketStatus.Resolved, ticket.Status);
@@ -118,7 +112,6 @@ namespace TicketSystem.Tests
             var service = CreateServiceWithMockData();
             var ticket = service.CreateTicket("C001", "Teszt", "...", TicketCategory.General);
 
-            // JAVÍTVA: 3. paraméter hozzáadva
             service.ChangeStatus(ticket.TicketId, TicketStatus.Closed, "A101");
 
             Assert.Throws<Exception>(() =>
@@ -148,7 +141,6 @@ namespace TicketSystem.Tests
 
             service.AssignTicket(t1.TicketId, "A101", "A101");
 
-            // JAVÍTVA: Paraméter neve frissítve (agentIdFilter -> assignedToFilter)
             var result = service.GetTickets(assignedToFilter: "A101");
 
             Assert.Single(result);

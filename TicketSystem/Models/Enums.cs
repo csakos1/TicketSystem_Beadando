@@ -8,26 +8,24 @@ namespace TicketSystem.Models
 {
     public enum TicketStatus
     {
-        New,            // Új
-        InProgress,     // Folyamatban
-        WaitingForUser, // Visszakérdezés az ügyféltől
-        Resolved,       // Megoldva
-        Closed          // Lezárva
+        New,
+        InProgress,
+        WaitingForUser,
+        Resolved,
+        Closed
     }
 
-    // A jegy kategóriája
     public enum TicketCategory
     {
-        General,        // Általános
-        Technical,      // Technikai hiba
-        Billing,        // Számlázás
-        PasswordReset   // Jelszóhelyreállítás
+        General,
+        Technical,
+        Billing,
+        PasswordReset
     }
 
-    // Felhasználói szerepkörök (hogy tudjuk, ki az Ügyfél és ki az Agent)
     public enum UserRole
     {
-        Customer, // Ügyfél
-        Agent     // Ügyfélszolgálatos
+        Customer,
+        Agent
     }
 }

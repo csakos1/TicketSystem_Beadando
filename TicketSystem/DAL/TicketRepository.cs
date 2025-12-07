@@ -9,7 +9,6 @@ namespace TicketSystem.DAL
 {
     public class TicketRepository : ITicketRepository
     {
-        // Ez a lista helyettesíti most az adatbázist
         private List<Ticket> _tickets;
 
         public TicketRepository()
@@ -21,7 +20,7 @@ namespace TicketSystem.DAL
 
         public void Add(Ticket ticket)
         {
-            lock (_lock) // Csak egy szál léphet be ide egyszerre
+            lock (_lock)
             {
                 _tickets.Add(ticket);
             }
@@ -34,20 +33,17 @@ namespace TicketSystem.DAL
 
         public Ticket GetById(string id)
         {
-            // Megkeresi az elsőt, akinek az ID-ja egyezik, vagy null-t ad vissza
             return _tickets.FirstOrDefault(t => t.TicketId == id);
         }
 
         public void Update(Ticket ticket)
         {
-            // Memóriában lévő lista esetén, ha módosítod az objektumot, 
-            // az a listában is módosul, így ide nem feltétlen kell kód, 
-            // de adatbázisnál itt lenne az UPDATE parancs.
+
         }
 
         public int GetNextId()
         {
-            lock (_lock) // Itt is zárni kell
+            lock (_lock)
             {
                 return _tickets.Count + 1;
             }

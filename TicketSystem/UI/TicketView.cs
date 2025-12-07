@@ -12,7 +12,6 @@ namespace TicketSystem.UI
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write($"[{t.TicketId}] ");
 
-            // Ha hozzám van rendelve, jelöljük meg!
             if (t.AssignedAgentId == currentUserId)
             {
                 Console.ForegroundColor = ConsoleColor.White;
@@ -68,7 +67,6 @@ namespace TicketSystem.UI
 
             foreach (var msg in messages.TakeLast(6))
             {
-                // Ha belső üzenet és nem agent nézi, akkor kihagyjuk
                 if (msg.IsInternal && !isAgent) continue;
 
                 Console.ForegroundColor = ConsoleColor.Gray;
